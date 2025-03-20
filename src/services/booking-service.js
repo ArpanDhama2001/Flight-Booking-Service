@@ -68,11 +68,6 @@ async function makePayment(data) {
         }
         const bookingTime = new Date(bookingDetails.createdAt);
         const currentTime = new Date();
-        console.log(
-            "Time:",
-            (currentTime - bookingTime) / 60000,
-            FLIGHT_EXPIRATION_TIME
-        );
         if (currentTime - bookingTime > FLIGHT_EXPIRATION_TIME) {
             await cancelBooking(data.bookingId);
             throw new AppError(
