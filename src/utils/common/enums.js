@@ -12,7 +12,10 @@ const BOOKING_STATUS = {
     PENDING: "pending",
 };
 
+const FLIGHT_EXPIRATION_TIME = 300000; // in ms => 5 mins
+
 module.exports = {
     SEAT_TYPE,
     BOOKING_STATUS,
+    FLIGHT_EXPIRATION_TIME,
 };
