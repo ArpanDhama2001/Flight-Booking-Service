@@ -2,12 +2,13 @@ const axios = require("axios");
 const { StatusCodes } = require("http-status-codes");
 
 const { BookingRepository } = require("../repositories");
-const { ServerConfig } = require("../config");
+const { ServerConfig, Queue } = require("../config");
 const db = require("../models");
 const AppError = require("../utils/errors/app-error");
 const { Enums } = require("../utils/common");
 const { BOOKED, CANCELLED } = Enums.BOOKING_STATUS;
 const { FLIGHT_BOOKING_EXPIRATION_TIME } = Enums;
+const { RECEPIENT_EMAIL } = require("../config/server-config");
 
 const bookingRepository = new BookingRepository();
 
@@ -67,7 +68,14 @@ async function makePayment(data) {
         }
         const bookingTime = new Date(bookingDetails.createdAt);
         const currentTime = new Date();
-        if (currentTime - bookingTime > FLIGHT_EXPIRATION_TIME) {
+        if (
+            currentTime - bookingTime >
+            FLIGHT_BOOKING_EXPIRATION_TIME * 60000
+        ) {
+            console.log(
+                "FLIGHT_BOOKING_EXPIRATION_TIME=====>",
+                FLIGHT_BOOKING_EXPIRATION_TIME
+            );
             await cancelBooking(data.bookingId);
             throw new AppError(
                 "The booking has expired",
@@ -92,8 +100,14 @@ async function makePayment(data) {
             { status: BOOKED },
             transaction
         );
+        Queue.sendData({
+            recepientEmail: RECEPIENT_EMAIL,
+            subject: "Flight booked Successfully",
+            text: `Booking successfully done for the booking id: ${data.bookingId}`,
+        });
         await transaction.commit();
     } catch (error) {
+        console.log("SERVICE ERROR:", error);
         await transaction.rollback();
         throw error;
     }
