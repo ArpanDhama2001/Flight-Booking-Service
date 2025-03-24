@@ -7,7 +7,7 @@ const db = require("../models");
 const AppError = require("../utils/errors/app-error");
 const { Enums } = require("../utils/common");
 const { BOOKED, CANCELLED } = Enums.BOOKING_STATUS;
-const { FLIGHT_EXPIRATION_TIME } = Enums;
+const { FLIGHT_BOOKING_EXPIRATION_TIME } = Enums;
 
 const bookingRepository = new BookingRepository();
 
@@ -53,7 +53,6 @@ async function makePayment(data) {
             data.bookingId,
             transaction
         );
-        console.log("BOOKING DETAILS FETCHED: ", bookingDetails.status);
         if (bookingDetails.status == CANCELLED) {
             throw new AppError(
                 "The booking has expired",
@@ -130,8 +129,22 @@ async function cancelBooking(bookingId) {
     }
 }
 
+async function cancelOldBookings() {
+    try {
+        const time = new Date(
+            Date.now() - FLIGHT_BOOKING_EXPIRATION_TIME * 60000
+        ); // time 5 mins ago
+        const response = await bookingRepository.cancelOldBookings(time);
+
+        return response;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 module.exports = {
     createBooking,
     makePayment,
     cancelBooking,
+    cancelOldBookings,
 };
